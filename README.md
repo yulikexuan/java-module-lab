@@ -36,6 +36,20 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 
 # OVERVIEW
 
+## Module Declaration Syntax
+
+
+``` 
+[open] module <module_name> {
+    exports <package> [to <module-name>];
+    opens <package>;
+    requires <module_name>;
+}
+```
+
+> Put the ``` exports ``` decorations at the top 
+
+
 ## Where does this module-info.java live?
 
 - The root of the source tree that comprises the module we're describing
@@ -157,8 +171,8 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
   unfettered reflective access to encapsulated classes, when using spring 
   framework or hibernate
 
-> It's better to have compile time encapsulation only than no encapsulation at 
-> all
+- It's better to have compile time encapsulation only than no encapsulation at all
+
 
     ``` 
     open module com.yulikexuan.domain {

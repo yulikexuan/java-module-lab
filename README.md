@@ -116,4 +116,21 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 > Cyclic Dependencies is definitely NOT ALLOWED
 
 
+# Open modules & packages
 
+## Open package for runtime reflective access
+
+- The com.yulikexuan.domain module
+
+    ``` 
+    module com.yulikexuan.domain {
+        exports com.yulikexuan.domain.model;
+        exports com.yulikexuan.domain.service.api;
+        opens com.yulikexuan.service.api.impl;
+    }
+    ```
+
+- Reflective Access
+    ``` 
+    Class.forName("com.yulikexuan.domain.service.api.impl.GreetingServiceImpl").newInstance();
+    ```

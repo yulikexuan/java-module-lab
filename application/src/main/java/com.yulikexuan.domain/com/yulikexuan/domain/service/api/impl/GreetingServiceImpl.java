@@ -11,6 +11,10 @@ public class GreetingServiceImpl implements GreetingService {
 
     private final Greetings greetings;
     
+    public GreetingServiceImpl() {
+        this.greetings = Greetings.of();
+    }
+    
     private GreetingServiceImpl(Greetings greetings) {
         this.greetings = greetings;
     }

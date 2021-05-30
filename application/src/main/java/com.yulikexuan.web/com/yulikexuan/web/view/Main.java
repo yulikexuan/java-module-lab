@@ -1,9 +1,14 @@
 package com.yulikexuan.web.view;
 
+
+import com.yulikexuan.domain.model.Greeter;
+
+
 public class Main {
     
     public static void main(String... args) {
-        System.out.println(">>>>>>> Greetings from the web module!");
+        Greeter greeter = new Greeter();
+        System.out.println(greeter.greeting());
     }
   
 }

@@ -91,14 +91,29 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 
 # Selectively Expose Code from a Module
 
-## The Default Encapsulation
-
-``` 
-module com.yulikexuan.domain {
-    exports com.yulikexuan.domain.model;
-}
-```
-
 ## Dependencies between Modules
+
+- The ``` com.yulikexuan.domain ``` module
+
+    ``` 
+        module com.yulikexuan.domain {
+            exports com.yulikexuan.domain.model;
+        }
+    ```
+
+- ``` exports ``` should be always followed by a package name
+
+- The ``` com.yulikexuan.web ``` module depends on ``` com.yulikexuan.domain ``` module
+
+    ``` 
+        module com.yulikexuan.web {
+            requires com.yulikexuan.domain;
+        }
+    ```
+
+- ``` requires ``` should always be followed by a module name
+
+> Cyclic Dependencies is definitely NOT ALLOWED
+
 
 

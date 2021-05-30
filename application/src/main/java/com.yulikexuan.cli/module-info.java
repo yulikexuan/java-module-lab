@@ -1,3 +1,3 @@
-module com.yulikexuan.web {
+module com.yulikexuan.cli {
     requires com.yulikexuan.domain;
 }

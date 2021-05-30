@@ -120,7 +120,20 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 
 ## Open package for runtime reflective access
 
-- The com.yulikexuan.domain module
+- Reflective Access
+
+    ``` 
+    module com.yulikexuan.domain {
+        exports com.yulikexuan.domain.model;
+        exports com.yulikexuan.domain.service.api;
+        opens com.yulikexuan.domain.service.api.impl;
+    }
+    
+    ``` 
+    Class.forName("com.yulikexuan.domain.service.api.impl.GreetingServiceImpl").newInstance();
+    ```
+
+- Reflective change access level of a field of domain module
 
     ``` 
     module com.yulikexuan.domain {
@@ -130,15 +143,27 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
         opens com.yulikexuan.domain.service.api.impl;
     }
     ```
-
-- Reflective Access
-
-    ``` 
-    Class.forName("com.yulikexuan.domain.service.api.impl.GreetingServiceImpl").newInstance();
-    ```
     
     ``` 
     Class.forName("com.yulikexuan.domain.model.Greeter")
             .getDeclaredField("secret")
             .setAccessible(true);
     ```
+
+
+## Open Modules for reflection
+
+- Opoen modules can be a useful default when working with frameworks that expect
+  unfettered reflective access to encapsulated classes, when using spring 
+  framework or hibernate
+
+> It's better to have compile time encapsulation only than no encapsulation at 
+> all
+
+    ``` 
+    open module com.yulikexuan.domain {
+        exports com.yulikexuan.domain.model;
+        exports com.yulikexuan.domain.service.api;
+    }
+    ```
+

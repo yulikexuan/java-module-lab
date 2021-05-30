@@ -126,11 +126,19 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
     module com.yulikexuan.domain {
         exports com.yulikexuan.domain.model;
         exports com.yulikexuan.domain.service.api;
-        opens com.yulikexuan.service.api.impl;
+        opens com.yulikexuan.domain.model;
+        opens com.yulikexuan.domain.service.api.impl;
     }
     ```
 
 - Reflective Access
+
     ``` 
     Class.forName("com.yulikexuan.domain.service.api.impl.GreetingServiceImpl").newInstance();
+    ```
+    
+    ``` 
+    Class.forName("com.yulikexuan.domain.model.Greeter")
+            .getDeclaredField("secret")
+            .setAccessible(true);
     ```

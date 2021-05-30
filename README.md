@@ -87,3 +87,18 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 - A JAR file that contains a top-level module-info.class is called a modular 
   JAR file
 - A modular JAR file behaves differently than a regular JAR file
+
+
+# Selectively Expose Code from a Module
+
+## The Default Encapsulation
+
+``` 
+module com.yulikexuan.domain {
+    exports com.yulikexuan.domain.model;
+}
+```
+
+## Dependencies between Modules
+
+

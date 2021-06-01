@@ -1,5 +1,7 @@
 # Java Module Commands
 
+``` rm -fr target/classes ```
+
 ## All Modules in ONE 
 
 > NOTE: THERE IS NO COMMA BETWEEN MODULE NAMES
@@ -33,6 +35,25 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
     java -p target/classes -m com.yulikexuan.domain/com.yulikexuan.domain.greeter.Main
 ```
 
+## List all modules of JDK
+
+``` java --list-modules ```
+
+
+## Check module declaration
+
+``` java --describe-module java.sql ```
+
+
+## The Java command Showing Module Resolution
+  ``` 
+  java --show-module-resolution -p target/classes -m com.yulikexuan.cli
+    root com.yulikexuan.cli file:///C:/TecsysDev/javaguru/projects/pure-java-lab/java-module-lab/application/target/classes/com.yulikexuan.cli/
+    com.yulikexuan.cli requires com.yulikexuan.domain file:///C:/TecsysDev/javaguru/projects/pure-java-lab/java-module-lab/application/target/classes/com.yulikexuan.domain/
+    com.yulikexuan.domain requires java.logging jrt:/java.logging
+    ... ...
+  ```  
+  
 
 # OVERVIEW
 
@@ -260,7 +281,7 @@ open module com.yulikexuan.domain {
     ... ...
   ```
   
-![Modular JDK](./Modular_JDK.png "Modular JDK")
+![Modular JDK](./images/Modular_JDK.png "Modular JDK")
 
 
 - Two classes of modules
@@ -279,7 +300,7 @@ open module com.yulikexuan.domain {
     - the normal requires declaration
     - requires transitive
 
-- Expect module declarations for specific modules in the JDK
+- Check module declarations for specific modules in the JDK
 
   ``` 
   java --describe-module java.sql
@@ -295,3 +316,96 @@ open module com.yulikexuan.domain {
   
     - Every module needs to depend on java.base
     - the ``` java.sql ``` module is using the services mechanism of the JDK
+
+
+## Depending on Modules
+
+- Add ``` import java.util.logging.Logger; ``` to 
+  ``` com.yulikexuan.domain.service.api.impl.GreetingServiceImpl ```
+
+- Compile 
+  ``` javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.domain ```
+    - The error message: 
+      ``` 
+      src\main\java\com.yulikexuan.domain\com\yulikexuan\domain\service\api\impl\GreetingServiceImpl.java:8: error: package java.util.logging is not visible
+      import java.util.logging.Logger;
+                ^
+      (package java.util.logging is declared in module java.logging, but module com.yulikexuan.domain does not read it)
+      1 error
+      ```
+
+- Fix it in ``` module-info.java ``` of module ``` com.yulikexuan.domain ``` 
+
+  ``` 
+    open module com.yulikexuan.domain {
+        exports com.yulikexuan.domain.model;
+        exports com.yulikexuan.domain.service.api to com.yulikexuan.cli;
+        requires java.logging;
+    }
+  ```
+
+
+## Module Resolution
+
+### How these modules are resolved at runtime by the JVM 
+
+- The Java command has gained a new option 
+  ``` 
+  java --show-module-resolution -p target/classes -m com.yulikexuan.cli
+    root com.yulikexuan.cli file:///C:/TecsysDev/javaguru/projects/pure-java-lab/java-module-lab/application/target/classes/com.yulikexuan.cli/
+    com.yulikexuan.cli requires com.yulikexuan.domain file:///C:/TecsysDev/javaguru/projects/pure-java-lab/java-module-lab/application/target/classes/com.yulikexuan.domain/
+    com.yulikexuan.domain requires java.logging jrt:/java.logging
+    ... ...
+  ```  
+
+> Each package MUST uniquely belong to a single module
+
+![Modular JDK](./images/Require_Transitive.png "Modular JDK")
+
+## Requires Transitive
+
+- Why does ``` java.sql ``` depend on ``` java.logging ```? 
+    - The real answer is that one of the methods of ``` java.sql.Driver ```,  
+      ``` getParentLogger ```, returns a ``` java.util.logging.Logger ```, 
+      and this ``` Logger ``` comes from ``` java.util.logging ```, which is a 
+      package that belongs to the  ``` java.logging ``` module 
+    - Means that the usage of ``` java.logging ``` in the ``` java.sql ``` 
+      module is not just an implementation detail, but it's something that is 
+      exposed through the public API of ``` java.sql ``` because here we're 
+      returning a ``` Logger ``` type, and this ``` Logger ``` type does not 
+      belong to the ``` java.sql ``` module 
+    - The ``` java.sql.Driver ``` interface, which does belong to ``` java.sql ```
+      is part of an exported package, and thereby forms the API of the 
+      ``` java.sql ``` module
+
+- If a module depends on the ``` java.sql ``` module, and call ``` getParentLogger ``` 
+  then this module needs a dependency on ``` java.logging ``` because through 
+  this ``` java.sql.Driver ``` API that is defined in the ``` java.sql module ```
+  we're getting back a return value of a type that is defined in the 
+  ``` java.logging ``` module 
+
+- In essence, the authors of the ``` java.sql ``` module are FORCING this 
+  dependency on any consumer 
+
+- It's not just that this module must be resolved at runtime, but any module 
+  that requires the ``` java.sql ``` module must also require the ``` java.logging ``` 
+  module in its module declaration to be able to compile against the return type 
+  of ``` getParentLogger ```
+
+- In the module declaration of ``` java.sql ```, we say requires transitive 
+  ``` java.logging ```
+
+- Now if we create a module that just requires ``` java.sql ```, then because of 
+  the requires transitive that is in the module declaration of ``` java.sql ```, 
+  our defined module will also automatically get a dependency on 
+  ``` java.logging ``` 
+
+- A requires transitive dependency, therefore, always indicates a dependency 
+  that is necessary to support the exported API of the module 
+
+- The ``` Logger ``` type is part of the ``` java.sql.Driver ``` interface that 
+  is defined in ``` java.sql ```, so it has to be a requires transitive 
+  dependency from ``` java.sql ``` to ``` java.logging ``` 
+
+- On the other hand, a requires without transitive means that the dependency is 
+  necessary to support the internal implementation of a module 

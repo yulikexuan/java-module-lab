@@ -181,3 +181,117 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
     }
     ```
 
+## Qualified Exports
+
+``` 
+open module com.yulikexuan.domain {
+    exports com.yulikexuan.domain.model;
+    exports com.yulikexuan.domain.service.api to com.yulikexuan.cli;
+}
+```
+
+
+# Understanding the Modular JDK
+
+## Why Modularize the JDK
+
+- The JDK has been non-modular for a very long time
+    - The whole platform was packaged in a single JAR file called rt.jar where 
+      rt stands for runtime, now this had a lot of downsides
+        - Most notably, the code base of the JDK runtime became more and more 
+          bloated over time, 
+        - Dependencies between different parts of the JDK started to arise that 
+          should not be there
+    - There was no notion of true strong encapsulation
+        - All the internal implementation classes of the JDK were also just 
+          there in the rt.jar file and their use was heavily discouraged, 
+          but it was still possible to get to these internals quite easily, 
+          which led to a lot of libraries and some applications abusing these 
+          internal and private APIs, again hampering the evolution of the 
+          platform 
+        - Since Java is very strong on backwards compatibility, a lot of these 
+          private API abusers had to be supported to keep code running 
+        - This is not a sustainable way to evolve the platform 
+    - Another issue with the monolithic JDK is that it became an all or nothing 
+      approach 
+        - It simply was not possible to tune it to your own needs 
+        - So even if you were just writing a web application, you still have all 
+          the desktop APIs there
+
+- The JDK was not in a good place when looking at long-term evolution  
+
+- Modularizing the JDK is a means to address all these issues at once 
+
+
+
+## Exploring the Modular JDK
+
+- Show you all the modules that are currently part of the JDK 
+  ``` 
+    java --list-modules
+    
+    java.base@15.0.1
+    java.compiler@15.0.1
+    java.datatransfer@15.0.1
+    java.desktop@15.0.1
+    java.instrument@15.0.1
+    java.logging@15.0.1
+    java.management@15.0.1
+    java.management.rmi@15.0.1
+    java.naming@15.0.1
+    java.net.http@15.0.1
+    java.prefs@15.0.1
+    java.rmi@15.0.1
+    java.scripting@15.0.1
+    java.se@15.0.1
+    java.security.jgss@15.0.1
+    java.security.sasl@15.0.1
+    java.smartcardio@15.0.1
+    java.sql@15.0.1
+    ... ...
+    jdk.accessibility@15.0.1
+    jdk.aot@15.0.1
+    jdk.attach@15.0.1
+    jdk.charsets@15.0.1
+    jdk.compiler@15.0.1
+    jdk.crypto.cryptoki@15.0.1
+    jdk.crypto.ec@15.0.1
+    jdk.crypto.mscapi@15.0.1
+    ... ...
+  ```
+  
+- ![Modular JDK](.Modular_JDK.png "Modular JDK")
+
+
+- Two classes of modules
+    - The first class of modules starts with ``` java ```
+        - All modules that start with ``` java ``` are part of the Java 
+          specification
+        - Every JDK must provide these modules according to the specification
+    - The second class of modules starts with ``` jdk ```
+        - Modules starting with ``` jdk ``` or different names are still 
+          important and provide a lot of functionality, but these modules are 
+          implementation dependent 
+        - Means that different JDK implementations may have different sets of 
+          non-Java modules
+    
+- Two different ways to require other modules
+    - the normal requires declaration
+    - requires transitive
+
+- Expect module declarations for specific modules in the JDK
+
+  ``` 
+  java --describe-module java.sql
+    java.sql@15.0.1
+    exports java.sql
+    exports javax.sql
+    requires java.base mandated
+    requires java.xml transitive
+    requires java.transaction.xa transitive
+    requires java.logging transitive
+    uses java.sql.Driver
+  ```
+  
+    - Every module needs to depend on java.base
+    - the ``` java.sql ``` module is using the services mechanism of the JDK

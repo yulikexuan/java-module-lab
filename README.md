@@ -260,7 +260,7 @@ open module com.yulikexuan.domain {
     ... ...
   ```
   
-- ![Modular JDK](.Modular_JDK.png "Modular JDK")
+![Modular JDK](./Modular_JDK.png "Modular JDK")
 
 
 - Two classes of modules

@@ -360,7 +360,7 @@ open module com.yulikexuan.domain {
 
 > Each package MUST uniquely belong to a single module
 
-![Modular JDK](./images/Require_Transitive.png "Modular JDK")
+![Require_Transitive](./images/Require_Transitive.png "Require Transitive")
 
 ## Requires Transitive
 

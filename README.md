@@ -487,63 +487,21 @@ contains com.yulikexuan.domain.service.api.impl
 contains com.yulikexuan.domain.util
 ```
 
+## Use ``` JMOD ``` to package modules
 
-We're using the same file flag that we saw before to indicate which modular 
-JAR file we want to describe. 
 
-And running these commands gives the following output. 
+# Using services in java modules
 
-The first two lines are about identifying the module, and what follows is a 
-description of the contents of the module declaration. 
+## Why Services?
 
-This module exports the com.pluralsight package, it implicitly requires java.base 
-expressed by requires java.base mandated, and we can also see through contains 
-com.pluralsight.util that this module strongly encapsulates the com.pluralsight.util 
-package. 
+- Services offer another way for modules to interact, which will make your 
+  modular applications even more flexible
 
-The output we see here is similar to the output that we saw when describing 
-modules of the JDK. 
+- Interestingly, a lot of the machinery behind services was already present in 
+  the JDK before modules came along, however, services got an overhaul with the 
+  introduction of the module system, and are now much easier to use
 
-But with the jar tool we can inspect any modular JAR file, regardless of where 
-it came from. 
-
-There's one last thing that we should discuss in terms of packaging modules. 
-
-With the introduction of the module system, a new packaging format was introduced 
-as well called JMOD. 
-
-There's also a command line tool with the same name in the JDK. 
-
-This new packaging format for modules has some additional features. 
-
-It can better handle embedded native libraries and header files, knows how to 
-handle legal notices, but unlike modular JAR files, JMODs are not meant to be 
-an executable format for modules. 
-
-You will find a JMOD version of every JDK module under the JAVA_HOME directory 
-in the jmods subdirectory. 
-
-These JMOD package modules are intended to be used together with the jlink tool. 
-This can create minimal native images containing only the particular subset of 
-modules that an application needs to run. 
-
-We will not go into more details on jlink in this course, but creating native 
-runtime images using jlink is definitely a cool application of the module system. 
-
-So if you're interested in that, I encourage you to look at additional resources, 
-which we'll discuss at the end of this course, to dive deeper into this 
-functionality. 
-
-The reason why I wanted to mention JMOD is that it might come up as part of the 
-certification questions. 
-
-And then you should know that it's a new packaging format for modules that is 
-mostly used internally by the JDK. 
-
-It's good to know about them, but in practice there is no immediate consequence 
-for us as developers. 
-
-And practically speaking, they won't replace JAR files for us. 
-And this brings us already to the end of our discussion of the modular JDK. 
-
-It's time to wrap up before we move on to services.
+- What is wrong with the interaction between modules using requires 
+    - There are some downsides when one module requires another module
+    
+![Why services for modules](./images/Why_Services_for_Modules.png "Why services for modules")

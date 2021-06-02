@@ -11,7 +11,7 @@ javac -d {output-dir} --module-source-path {src-root-dir} -m {module-name-1},{mo
 ``` 
 
 ``` 
-javac -d target/classes --module-source-path src/mian/java -m com.yulikexuan.web 
+javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.web 
 ```
 
 ``` 
@@ -20,6 +20,21 @@ javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.dom
 
 > java -p -m === java --module-path --module
 
+``` 
+javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.domain,com.yulikexuan.cli,com.yulikexuan.web
+```
+
+``` 
+jar --create --file=target/domain-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.domain . 
+``` 
+
+```
+jar --create --file=target/cli-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.cli .
+``` 
+
+```
+jar --create --file=target/web-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.web .
+```
 
 
 ## Single Module 
@@ -360,9 +375,11 @@ open module com.yulikexuan.domain {
 
 > Each package MUST uniquely belong to a single module
 
-![Require_Transitive](./images/Require_Transitive.png "Require Transitive")
+
 
 ## Requires Transitive
+
+![Require_Transitive](./images/Require_Transitive.png "Require Transitive")
 
 - Why does ``` java.sql ``` depend on ``` java.logging ```? 
     - The real answer is that one of the methods of ``` java.sql.Driver ```,  
@@ -409,3 +426,124 @@ open module com.yulikexuan.domain {
 
 - On the other hand, a requires without transitive means that the dependency is 
   necessary to support the internal implementation of a module 
+
+
+## Packaging a Module
+
+``` 
+javac -d target/classes --module-source-path src/main/java -m com.yulikexuan.domain,com.yulikexuan.cli,com.yulikexuan.web
+```
+
+``` 
+jar --create --file=target/domain-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.domain . 
+``` 
+
+```
+jar --create --file=target/cli-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.cli .
+``` 
+
+```
+jar --create --file=target/web-1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.web .
+```
+
+
+
+- Invoke the jar tool with the ``` --create ``` flag
+
+- Use ``` --file ``` flag to indicate the output location and the name of the 
+  jar file
+
+- Use ``` -C <DIR> ``` flag followed by the directory that the jar tool will 
+  change to in order to find the contents
+    - the dot ``` . ``` means that all files in the specified directory ``` <DIR> ```
+
+- Use ``` --module-version ``` to specify the version of the jar
+    - The Java Platform Module System does not support versioning of Java modules
+    - You cannot have multiple versions of a module available on the module path 
+      when running a Java 9+ application
+    - But it's still possible to set a version for a modular JAR file
+    - But this is just for convenience because in the end the name of a JAR file 
+      does not matter at all since the name of the module is determined by the 
+      module declaration that's inside of the modular JAR file
+    - At this point in time, the version of a module is only there for 
+      informational reasons
+    - The version is not used during module resolution 
+    - And it's also not possible to require a specific version of a module
+    - While it's recommended to set a module version for a modular JAR file if a 
+      version is available, it does not really affect anything
+
+
+## Inspect modular JAR files 
+
+``` 
+jar --describe-module --file=target/domain-1.0.0.jar
+
+com.yulikexuan.domain@1.0.0 jar:file:///C:/TecsysDev/javaguru/projects/pure-java-lab/java-module-lab/application/target/domain-1.0.0.jar/!module-info.class open
+exports com.yulikexuan.domain.model
+requires java.base mandated
+requires java.logging
+qualified exports com.yulikexuan.domain.service.api to com.yulikexuan.cli
+contains com.yulikexuan.domain.service.api.impl
+contains com.yulikexuan.domain.util
+```
+
+
+We're using the same file flag that we saw before to indicate which modular 
+JAR file we want to describe. 
+
+And running these commands gives the following output. 
+
+The first two lines are about identifying the module, and what follows is a 
+description of the contents of the module declaration. 
+
+This module exports the com.pluralsight package, it implicitly requires java.base 
+expressed by requires java.base mandated, and we can also see through contains 
+com.pluralsight.util that this module strongly encapsulates the com.pluralsight.util 
+package. 
+
+The output we see here is similar to the output that we saw when describing 
+modules of the JDK. 
+
+But with the jar tool we can inspect any modular JAR file, regardless of where 
+it came from. 
+
+There's one last thing that we should discuss in terms of packaging modules. 
+
+With the introduction of the module system, a new packaging format was introduced 
+as well called JMOD. 
+
+There's also a command line tool with the same name in the JDK. 
+
+This new packaging format for modules has some additional features. 
+
+It can better handle embedded native libraries and header files, knows how to 
+handle legal notices, but unlike modular JAR files, JMODs are not meant to be 
+an executable format for modules. 
+
+You will find a JMOD version of every JDK module under the JAVA_HOME directory 
+in the jmods subdirectory. 
+
+These JMOD package modules are intended to be used together with the jlink tool. 
+This can create minimal native images containing only the particular subset of 
+modules that an application needs to run. 
+
+We will not go into more details on jlink in this course, but creating native 
+runtime images using jlink is definitely a cool application of the module system. 
+
+So if you're interested in that, I encourage you to look at additional resources, 
+which we'll discuss at the end of this course, to dive deeper into this 
+functionality. 
+
+The reason why I wanted to mention JMOD is that it might come up as part of the 
+certification questions. 
+
+And then you should know that it's a new packaging format for modules that is 
+mostly used internally by the JDK. 
+
+It's good to know about them, but in practice there is no immediate consequence 
+for us as developers. 
+
+And practically speaking, they won't replace JAR files for us. 
+And this brings us already to the end of our discussion of the modular JDK. 
+
+It's time to wrap up before we move on to services.

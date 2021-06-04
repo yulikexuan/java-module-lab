@@ -650,9 +650,11 @@ module com.yulikexuan.greeter.cli {
 > When designing a service interface, don't just think about the functionality is to be exposed, but also think about the information that also should be exposed to potential callers that will help them decide on which service implementation is appropriate in case there are multiple implementations available
 
 
-## Services and Module resolution
+## Services and Module Resolution
 
 ### OVERVIEW
+
+![Java Service Module Resolution](./images/Java_Service_Module_Resolution.png "Java Service Module Resolution")
 
 - Explicitly list our service provider modules for compilation
 - At runtime, the modules were discovered by the module system (after starting our CLI module without listing them explicitly)

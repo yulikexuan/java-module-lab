@@ -744,7 +744,7 @@ module com.yulikexuan.greeter.cli {
             - This way, you will prevent new instances of illegal reflective access coming into your application
 
 
-## Demo: Export Packages from the Command Line
+## Export Packages from the Command Line
 
 - The source code
 

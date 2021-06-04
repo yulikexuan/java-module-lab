@@ -718,3 +718,25 @@ module com.yulikexuan.greeter.cli {
             - But on the class path, anything goes
                 - However, when such a reflective access happens for the first time at runtime, the JVM will print a warning to the console
                 And this is a pretty big deal
+
+
+## Open Packages from the Command Line
+
+- What if your application or the dependencies in your application cause such a reflective access warning?
+    - Upgrade to a newer version of the library, where hopefully the library maintainers have moved away from depending on internal implementation details of the JDK, to a publicly supported API
+      - For every warning you run into, there's a public and supported alternative API that could have been used
+    - If there is no new version of the dependency that doesn't trigger these warnings, then do as suggested in the error message and urge the maintainers of the library to not depend on nonpublic APIs
+        - However, while you wait for a new release fixing these issues, you would still like to run your application on the class path without these warnings
+            - So to work around such a warning, you can use a special JVM flag to start your application
+            - Using the ``` ‑‑add‑opens ``` flag, you can, for a given module, in this case ``` java.base ```, add the case for a given package, ``` java.lang ``` here, to which other module it should be opened to
+              ```
+                java --add-opens java.base/java.lang=<module_name> // FOR MODULE APP
+              ```
+            - This is a generic mechanism that allows you to open packages if they're not opened by their module declaration
+            - However, the application that we're talking about is not a module, it's on the class path. And for this exact situation, a special token called ``` ALL‑UNNAMED ``` can be used to indicate that this package must be opened to the class path
+              ```
+                java --add-opens java.base/java.lang=ALL-UNNAMED --illegal-access=deny  // FOR CLASSPATH APP
+              ```
+            - When you do so, the warning will no longer be printed
+            - And you can now even run this code with the recommended ‑‑illegal‑access flag set to deny
+            - This way, you will prevent new instances of illegal reflective access coming into your application

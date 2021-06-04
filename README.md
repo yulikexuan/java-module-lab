@@ -690,4 +690,31 @@ module com.yulikexuan.greeter.cli {
 
 # Migrating to Modules
 
-## The Unnamed Module
+## The classpath in a Modular World - The Unnamed Module
+
+- Java Modules are completely optional when developing Java applications, even if the JDK itself has been modularized
+
+- When you start using Java 11, most applications will just run on the class path on top of this modular JDK.
+
+- Before even thinking of migrating your application to modules, you should first ensure that it runs on the Java 11 class path
+
+- How the class path interacts with the modular JDK
+    - Interestingly, the class path itself can be viewed as a module
+        - It doesn't have a name or a module declaration for that matter, but all code on the class path is treated by the JVM as running in a so‑called unnamed module
+        - Contrast this with named modules, which are the modules that we created so far using module declarations and by putting them on the module path   - The unnamed module, however, representing all code on the class path, plays by different rules
+            - It doesn't have to specify any dependencies because there's no way to do that without a module declaration
+            - And therefore it can access every class in every module of the JDK  - This has to be the case because otherwise existing class path based applications wouldn't run
+            - And for the sake of backward compatibility, we want these applications to keep on running
+    - There's a big difference between runtime and compile time though
+        - At compile time, even if you're using just a class path and no modules or module declarations, strong encapsulation of JDK modules is enforced
+            - So you will not be able to compile new code that uses types from encapsulated packages inside of the JDK
+            - Look at this as a way to prevent new legacy code of being introduced when you're using JDK 11 to compile your application
+        - Still at runtime everything will be fine
+            - If your application JARs or dependencies use types from encapsulated packages, at runtime this will not be an issue
+            - It's of course not the preferred way forward because you're still relying on the implementation details of the JDK, but at least things won't break
+    - The same holds when you run existing code on top of the JDK 11 class path that uses reflection to bypass access controls
+        - This will also still work on the class path to ensure backward compatibility
+            - Remember, in the modular world, a package would have to be opened in order to be able to do deep reflection on it
+            - But on the class path, anything goes
+                - However, when such a reflective access happens for the first time at runtime, the JVM will print a warning to the console
+                And this is a pretty big deal

@@ -82,7 +82,6 @@ jar --create --file=mod/greeter.api.1.0.0.jar --module-version=1.0.0 -C target/c
 
 ## Module Declaration Syntax
 
-
 ```
 [open] module <module_name> {
     exports <package> [to <module-name>];
@@ -657,8 +656,7 @@ module com.yulikexuan.greeter.cli {
 
 - Explicitly list our service provider modules for compilation
 - At runtime, the modules were discovered by the module system (after starting our CLI module without listing them explicitly)
-
-- That's because services are also involved in the module resolution process  
+    - That's because services are also involved in the module resolution process  
 
 - Theoretically, consumer modules should be able to run without any service providers being present
 
@@ -666,4 +664,28 @@ module com.yulikexuan.greeter.cli {
 
  - How the module resolution process works based on our example
 
- We start the greeter.cli module, making it our root module for resolution. Then the module system sees in the module declaration that it requires greeter.api, so this module, too, will be resolved. However, greeter.api doesn't have any other required dependencies. So with the knowledge that we have so far, this is where the module resolution would stop. However, the module system during resolution also looks at the user's declarations in module infos, and greeter.cli indicates that it uses MessageService. Therefore, the module system will look on the module path to see if there are any modules providing MessageService. And in our case, there are two modules that are provided modules for the MessageService interface, greeter.hello and greeter.friendly. So these two modules also will be resolved. With these two new modules resolved, the module system will now look at the module declarations for greeter.hello and greeter.friendly to see if they have any requires or users declarations that require further module resolution. However, greeter.hello and greeter.friendly only have a required relation with greeter.api, which was already resolved. So there's nothing left for the module resolution process to do. Module resolution is now complete. One thing to keep in mind is that Java.base is always part of the resolved module set, and interestingly, the java.base module info also has a lot of users declarations, indicating that java.base wants to use services from other JDK modules. Therefore, these will be resolved as well during this process, and I'm not showing that here because that will be a very big list. But if you're interested in the details, then run the application with the ‑‑show‑module‑resolution flag, then you will not only see how the service binding triggers module resolution of the greeter.friendly and the greeter.hello modules, but also how java.base binds to a lot of other JDK modules because of the users declarations that it has.
+### The root module
+
+- Start the greeter.cli module, making it our root module for resolution
+
+- Then the module system sees in the module declaration that it requires ``` com.yulikexuan.greeter.api ```, so this module, too, will be resolved
+
+- However, the module system during resolution also looks at the user's declarations in module infos, and ``` com.yulikexuan.greeter.cli `` indicates that it uses ``` MessageService ```
+    - Therefore, the module system will look on the module path to see if there are any modules providing MessageService
+        - And in our case, there are three modules that are provided modules for the ``` MessageService ``` interface,
+          - ``` com.yulikexuan.greeter.formal ```,
+          - ``` com.yulikexuan.greeter.friendly ```
+          - ``` com.yulikexuan.greeter.grumpy ```
+        - So these modules also will be resolved
+    - With these new modules resolved, the module system will now look at the module declarations for ``` greeter.formal ```, ``` greeter.friendly ```, and ``` greeter.grumpy ``` to see if they have any requires or users declarations that require further module resolution
+      - However, ``` greeter.formal ```, ``` greeter.friendly ```, and ``` greeter.grumpy ``` only have a required relation with ``` greeter.api ```, which was already resolved
+    - So there's nothing left for the module resolution process to do
+
+- One thing to keep in mind is that ``` java.base ``` is always part of the resolved module set, and interestingly, the ``` java.base ``` module info also has a lot of users declarations, indicating that ``` java.base ``` wants to use services from other JDK modules
+  - Therefore, these will be resolved as well during this process
+  - Run the application with the ``` ‑‑show‑module‑resolution ``` flag, then you will not only see how the service binding triggers module resolution of implementation modules, but also how java.base binds to a lot of other JDK modules because of the users declarations that it has
+
+
+# Migrating to Modules
+
+## The Unnamed Module

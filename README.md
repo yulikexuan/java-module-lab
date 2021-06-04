@@ -519,8 +519,6 @@ contains com.yulikexuan.domain.util
 
 ![Decoupling with Services](./images/Decoupling_with_Services.png "Decoupling with Services")
 
-Java_Service_Module.png
-
 ![Java Service Module.png](./images/Java_Service_Module.png "Java Service Module")
 
 ```
@@ -550,3 +548,122 @@ java -p target/classes -m com.yulikexuan.greeter.cli/ com.yulikexuan.greeter.cli
 ```
 java -p mod;target/classes -m com.yulikexuan.greeter.cli/com.yulikexuan.greeter.cli.Main
 ```
+
+## Module Declaration Syntax
+
+```
+[open] module <module_name> {
+    exports <package>;
+    opens <package>;
+    requires <module_name>;
+
+    uses <package>.<type_name>;
+
+    provides <package>.<type_name> with <package>.<type_name>;
+}
+```
+
+- The most common way to provide a service is to use ``` interface ``` after
+``` provides ```
+  - but it could also be an ``` abstract class ``` or even a concrete class
+
+- A module can ``` uses ``` modules and ``` provides ``` implementations in the same time
+
+- Use ``` import ``` in module declarations
+
+```
+import com.yulikexuan.greeter.api.MessageService;
+module com.yulikexuan.greeter.cli {
+    requires com.yulikexuan.greeter.api;
+    uses MessageService;
+}
+```
+
+## Service Instantiation
+
+### Questions about Java Services
+- Why the implementation class can be part of an encapsulated package
+- How does the services mechanism instantiate these implementations?
+
+- There are essentially two ways in which a service can be instantiated:
+    - The service has a public no‑arguments constructor used to instantiate the service
+    - Use provider method if there is no default constructor
+        - A public static provider method called provider, this method should return an object that implements the ``` MessageService ``` interface
+        - The services mechanism will simply call the provider method and take whatever is returned to put it in the service registry
+        - By iterating over the ``` ServiceLoader ``` object that was returned,  all discovered services on the module path are instantiated directly, and we could use them right away
+
+      ```
+        public class FormalMessageService implements MessageService {
+            private final String header;
+            private FormalMessageService(String header) {
+                this.header = header;
+            }
+            public static MessageService provider() {
+                return new HelloMessageService("From Tecsys");
+            }
+            // ... ...
+        }
+      ```
+
+
+### Lazy Instantiation
+
+- The ``` ServiceLoader ``` API also supports lazy instantiation
+
+  ```
+  public final class ServiceLoader<S> extends Object implements Iterable<S>
+  ```
+
+- ``` ServiceLoader::stream() ``` returns ``` Stream<ServiceLoader.Provider<S>> ```
+
+- ``` ServiceLoader.Provider::get ``` returns an instance of the provider, for example, ``` GrumpyMessageService ```
+
+- ``` ServiceLoader.Provider::type ``` returns the provider type, for example, an implementation type of ``` MessageService ```, can be
+``` FriendlyMessageService ```, etc.
+
+  ```
+    ServiceLoader<MessageService> services =
+            ServiceLoader.load(MessageService.class);
+    services.stream()
+            .filter(provider -> { ... })
+            .map(ServiceLoader.Provider::get)
+            .forEach(messageService -> { ... });
+  ```
+    - Calling get triggers the instantiation of the service, either through the public no‑arg constructor, as we discussed before, or through the static provider method on the service
+    - And then finally, we can start using the service instances
+
+- This mechanism, however, works on the assumption that we can select which service to use based on the implementation class reference
+
+
+### Service Interface Design
+
+- What can we do to make it easier for consumers to select the right service implementation if there are multiple providers for a given service?
+    - The recommended way to do this is that when you expect multiple implementations for a service, then we need to offer consumers enough information through the service interface itself to choose which service implementation is most appropriate for the consumer
+    - We may want to expose additional metadata or quality of service attributes through the service interface
+
+- For example:
+    - We want to print a message in our example based on the age of the user of the application
+    - Extend the ``` MessageService ``` interface with a ``` getTargetAge ``` method
+    - The consumer of ``` MessageService ``` implementations can invoke ``` getTargetAge ``` on the various providers before calling ``` getMessage ``` on the appropriate implementation
+
+- Whatever you want to add to your service interface is very domain‑specific and there are no general answers here
+
+> When designing a service interface, don't just think about the functionality is to be exposed, but also think about the information that also should be exposed to potential callers that will help them decide on which service implementation is appropriate in case there are multiple implementations available
+
+
+## Services and Module resolution
+
+### OVERVIEW
+
+- Explicitly list our service provider modules for compilation
+- At runtime, the modules were discovered by the module system (after starting our CLI module without listing them explicitly)
+
+- That's because services are also involved in the module resolution process  
+
+- Theoretically, consumer modules should be able to run without any service providers being present
+
+ - However, in practice, we would like services to be available
+
+ - How the module resolution process works based on our example
+
+ We start the greeter.cli module, making it our root module for resolution. Then the module system sees in the module declaration that it requires greeter.api, so this module, too, will be resolved. However, greeter.api doesn't have any other required dependencies. So with the knowledge that we have so far, this is where the module resolution would stop. However, the module system during resolution also looks at the user's declarations in module infos, and greeter.cli indicates that it uses MessageService. Therefore, the module system will look on the module path to see if there are any modules providing MessageService. And in our case, there are two modules that are provided modules for the MessageService interface, greeter.hello and greeter.friendly. So these two modules also will be resolved. With these two new modules resolved, the module system will now look at the module declarations for greeter.hello and greeter.friendly to see if they have any requires or users declarations that require further module resolution. However, greeter.hello and greeter.friendly only have a required relation with greeter.api, which was already resolved. So there's nothing left for the module resolution process to do. Module resolution is now complete. One thing to keep in mind is that Java.base is always part of the resolved module set, and interestingly, the java.base module info also has a lot of users declarations, indicating that java.base wants to use services from other JDK modules. Therefore, these will be resolved as well during this process, and I'm not showing that here because that will be a very big list. But if you're interested in the details, then run the application with the ‑‑show‑module‑resolution flag, then you will not only see how the service binding triggers module resolution of the greeter.friendly and the greeter.hello modules, but also how java.base binds to a lot of other JDK modules because of the users declarations that it has.

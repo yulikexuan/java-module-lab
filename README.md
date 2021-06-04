@@ -722,6 +722,8 @@ module com.yulikexuan.greeter.cli {
 
 ## Open Packages from the Command Line
 
+- Use ``` ‑‑add‑opens ``` at runtime to prevent warnings and errors around illegal, reflective access
+
 - What if your application or the dependencies in your application cause such a reflective access warning?
     - Upgrade to a newer version of the library, where hopefully the library maintainers have moved away from depending on internal implementation details of the JDK, to a publicly supported API
       - For every warning you run into, there's a public and supported alternative API that could have been used
@@ -740,3 +742,96 @@ module com.yulikexuan.greeter.cli {
             - When you do so, the warning will no longer be printed
             - And you can now even run this code with the recommended ‑‑illegal‑access flag set to deny
             - This way, you will prevent new instances of illegal reflective access coming into your application
+
+
+## Demo: Export Packages from the Command Line
+
+- The source code
+
+```
+package com.yulikexuan.migration;
+
+import sun.security.x509.X500Name;
+
+public class Legacy {
+    public static void main(String... args) throws Exception {
+        X500Name name = new X500Name("test.com", "test", "test", "UD");
+        System.out.println(name);
+    }
+}
+```
+
+- Compile
+```
+javac -d target/classes src/main/java/com/yulikexuan/migration/Legacy.java
+
+src\main\java\com\yulikexuan\migration\Legacy.java:3: error: package sun.security.x509 is not visible
+import sun.security.x509.X500Name;
+                   ^
+  (package sun.security.x509 is declared in module java.base, which does not export it to the unnamed module)
+1 error
+```
+
+- Compile with ``` --add-exports java.base/sun.security.x509=ALL-UNNAMED  ```
+
+```
+javac --add-exports java.base/sun.security.x509=ALL-UNNAMED -d target/classes src/main/java/com/yulikexuan/migration/Legacy.java
+
+src\main\java\com\yulikexuan\migration\Legacy.java:3: warning: X500Name is internal proprietary API and may be removed in a future release
+import sun.security.x509.X500Name;
+                        ^
+src\main\java\com\yulikexuan\migration\Legacy.java:8: warning: X500Name is internal proprietary API and may be removed in a future release
+        X500Name name = new X500Name("test.com", "test", "test", "UD");
+        ^
+src\main\java\com\yulikexuan\migration\Legacy.java:8: warning: X500Name is internal proprietary API and may be removed in a future release
+        X500Name name = new X500Name("test.com", "test", "test", "UD");
+                            ^
+3 warnings
+```
+
+- To run the Legacy class
+
+```
+java -cp target/classes com.yulikexuan.migration.Legacy
+CN=test.com, OU=test, O=test, C=UD
+```
+    - At runtime, the classpath can access anything in the JDK to preserve the backward compatibility for existing codes
+
+- Run Legacy class using ``` --illegal-access=deny ``` flag
+
+```
+java --illegal-access=deny -cp target/classes com.yulikexuan.migration.Legacy
+Exception in thread "main" java.lang.IllegalAccessError: class com.yulikexuan.migration.Legacy (in unnamed module @0x76ed5528) cannot access class sun.security.x509.X500Name (in module java.base) because module java.base does not export sun.security.x509 to unnamed module @0x76ed5528
+        at com.yulikexuan.migration.Legacy.main(Legacy.java:8)
+```
+
+- Run Legacy class using both of ``` --illegal-access=deny ``` flag and ``` --add-exports java.base/sun.security.x509=ALL-UNNAMED ``` together
+```
+java --add-exports java.base/sun.security.x509=ALL-UNNAMED --illegal-access=deny -cp target/classes com.yulikexuan.migration.Legacy
+CN=test.com, OU=test, O=test, C=UD
+```
+
+
+## The great tool, ``` jdeps ``` Command
+
+- How to find out the replacement API for a particular internal type that we're using?
+
+- The very nice tool in the JDK that can help us find alternative APIs t non-public APIs, and this tool is called ``` jdeps ```
+
+```
+jdeps -jdkinternals target/classes/com/yulikexuan/migration/Legacy.class
+
+Legacy.class -> java.base
+   com.yulikexuan.migration.Legacy                    -> sun.security.x509.X500Name                         JDK internal API (java.base)
+
+Warning: JDK internal APIs are unsupported and private to JDK implementation that are
+subject to be removed or changed incompatibly and could break your application.
+Please modify your code to eliminate dependence on any JDK internal APIs.
+For the most recent update on JDK internal API replacements, please check:
+https://wiki.openjdk.java.net/display/JDK8/Java+Dependency+Analysis+Tool
+
+JDK Internal API                         Suggested Replacement
+----------------                         ---------------------
+sun.security.x509.X500Name               Use javax.security.auth.x500.X500Principal @since 1.4
+
+```

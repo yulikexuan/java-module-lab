@@ -44,6 +44,11 @@ jar --create --file=target/web-1.0.0.jar --module-version=1.0.0 -C target/classe
 jar --create --file=mod/greeter.api.1.0.0.jar --module-version=1.0.0 -C target/classes/com.yulikexuan.greeter.api .
 ```
 
+## To get the module name from a non-modular jar
+```
+jar --file=<jar file name> --describe-module
+```
+
 
 ## Single Module
 
@@ -835,3 +840,53 @@ JDK Internal API                         Suggested Replacement
 sun.security.x509.X500Name               Use javax.security.auth.x500.X500Principal @since 1.4
 
 ```
+
+
+## Bottom-up migration
+
+- Starting with "leaf" modules
+    - Write module-info.java
+    - Establish API
+    - Find JDK dependencies
+
+- Using ``` jdeps -s ``` to find out which jdk module the jar depends on
+    - ``` -s ``` means summary
+
+  ```
+  jdeps -s app-storage.jar
+  app-storage.jar -> java.base
+  app-storage.jar -> java.sql
+  ```
+
+- To generate ``` module-info.java ``` with ``` jdeps ```
+
+  ```
+  jdeps --generate-module-info . app-storage.jar writing to ./app.storage/module-info.java
+  ```
+
+- Normally, we do not control external dependencies which have no any module info
+
+
+## Top-down migration
+
+![Module Migration Top Down](./images/Module_Migration_Top_Down.png "Module Migration Top Down")
+
+- There's no way to express a dependency to a JAR file on the classpath from the module declaration of a module
+    - Take the existing external lib jar from the classpath and put it unaltered on the module path
+    - Means the jar file in classpath is now in the module path without a module declaration, such a jar file will be turned into an automatic module
+
+- When putting a non-modular jar on the module CLASSPATH
+    - Name derived from jar filename (``` java.base/java.lang.module.ModuleFinder ``` interface)
+        - Replaces dashes with dots as dashes are illegal in module names
+        - Tries to find any version-related information at the end of the filename and strips it
+    - From Automatic-Module-Name header
+    - Exports & opens all packages
+    - Implicitly requires all resolved modules
+    - Automatic modules can access the classpath
+
+- To get the module name from a non-modular jar
+  ```
+  jar --file=<jar file name> --describe-module
+  ```
+
+> Automatic modules are only meant to be used for migration

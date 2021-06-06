@@ -890,3 +890,18 @@ sun.security.x509.X500Name               Use javax.security.auth.x500.X500Princi
   ```
 
 > Automatic modules are only meant to be used for migration
+
+
+# Other Resources and Topics
+
+## Module Layer API
+- [Java 9 java.lang.Module API](https://www.baeldung.com/java-9-module-api)
+
+## Custom run-time images with ``` jlink ```
+- [Guide to jlink](https://www.baeldung.com/jlink#:~:text=jlink%20is%20a%20tool%20that,dependencies%20they%20need%20to%20function.)
+
+## Resource loading with modules
+- [Loading classes and resources in Java 9](https://stackoverflow.com/questions/45166757/loading-classes-and-resources-in-java-9)
+
+## Integration with build tools, like Maven
+- [Java 9 Modules - Developing Java 9 Modules with Apache Maven](https://www.logicbig.com/tutorials/core-java-tutorial/modules/java-9-modules-and-apache-maven.html)
